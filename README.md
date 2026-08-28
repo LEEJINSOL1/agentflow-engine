@@ -122,6 +122,7 @@ curl https://api.agentflowengine.com/v1/chat/completions \
 
 - **Website:** https://agentflowengine.com
 - **Email:** contact@agentflowengine.com
+- **GitHub:** https://github.com/LEEJINSOL1/agentflow-engine
 
 ---
 

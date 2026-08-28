@@ -34,7 +34,7 @@ export default function Footer() {
               contact@agentflowengine.com
             </a>
             <a
-              href="https://github.com/leejinsol1/agentflow-engine"
+              href="https://github.com/LEEJINSOL1/agentflow-engine"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
