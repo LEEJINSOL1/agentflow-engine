@@ -1,36 +1,36 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, Clock, Gauge } from "lucide-react";
+import { Target, Clock, Gauge } from "lucide-react";
 
 const benchmarks = [
   {
     model: "LLaMA-3-8B-Instruct",
     gpu: "NVIDIA L4",
-    ttft: "142ms",
-    tps: "847",
-    status: "live",
+    ttft: "~142ms",
+    tps: "~847",
+    status: "beta target",
   },
   {
     model: "LLaMA-3-70B-Instruct",
     gpu: "NVIDIA A10G",
-    ttft: "318ms",
-    tps: "124",
-    status: "live",
+    ttft: "~318ms",
+    tps: "~124",
+    status: "beta target",
   },
   {
     model: "Mistral-7B-Instruct-v0.3",
     gpu: "NVIDIA L4",
-    ttft: "98ms",
-    tps: "1,024",
-    status: "live",
+    ttft: "~98ms",
+    tps: "~1,024",
+    status: "beta target",
   },
   {
     model: "Mixtral-8x7B-Instruct",
     gpu: "NVIDIA A10G",
-    ttft: "276ms",
-    tps: "186",
-    status: "live",
+    ttft: "~276ms",
+    tps: "~186",
+    status: "beta target",
   },
 ];
 
@@ -44,9 +44,9 @@ export default function Benchmark() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl font-bold text-white">Live Benchmark</h2>
+          <h2 className="text-3xl font-bold text-white">Beta Target Benchmarks</h2>
           <p className="mt-3 text-gray-400">
-            Real-time inference performance across distributed GPU worker nodes
+            Projected inference performance for Q4 2026 GPU beta (vLLM load tests)
           </p>
         </motion.div>
 
@@ -98,15 +98,15 @@ export default function Benchmark() {
                       {row.model}
                     </td>
                     <td className="px-6 py-4 text-gray-400">{row.gpu}</td>
-                    <td className="px-6 py-4 font-mono text-emerald-400">
+                    <td className="px-6 py-4 font-mono text-amber-400/90">
                       {row.ttft}
                     </td>
-                    <td className="px-6 py-4 font-mono text-blue-400">
+                    <td className="px-6 py-4 font-mono text-blue-400/90">
                       {row.tps}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-emerald-400">
-                        <Activity className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1.5 text-amber-400/90">
+                        <Target className="h-3.5 w-3.5" />
                         {row.status}
                       </span>
                     </td>
@@ -117,8 +117,9 @@ export default function Benchmark() {
           </div>
         </motion.div>
 
-        <p className="mt-4 text-center text-xs text-gray-600">
-          Measured with vLLM 0.6.x · batch size 1 · 512 token context · us-central1
+        <p className="mt-4 text-center text-xs text-gray-500">
+          Estimated targets · vLLM 0.6.x · batch size 1 · 512 token context ·
+          validated in 90-day cloud GPU beta
         </p>
       </div>
     </section>

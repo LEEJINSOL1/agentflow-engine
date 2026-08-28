@@ -8,6 +8,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+api/__pycache__/
 
 # Secrets — never commit
 node_identity.json
@@ -33,3 +34,7 @@ application-docs/
 dist/
 build/
 *.log
+
+# Playwright (local screenshot capture)
+playwright-report/
+test-results/

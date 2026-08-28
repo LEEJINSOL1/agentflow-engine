@@ -1,0 +1,9 @@
+{
+  "name": "agentflow-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgentFlow Engine monorepo tooling",
+  "scripts": {
+    "screenshots": "node scripts/capture-screenshots.js"
+  }
+}

@@ -1,33 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, Target, Zap } from "lucide-react";
 
-function LiveLatencyBadge() {
-  const [latency, setLatency] = useState(142);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(Math.floor(120 + Math.random() * 40));
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
+function BetaTargetBadge() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm"
+      className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-sm"
     >
-      <span className="relative flex h-2 w-2">
-        <span className="pulse-dot absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+      <Target className="h-3.5 w-3.5 text-amber-400" />
+      <span className="text-amber-400 font-mono font-medium">
+        Beta target: P50 TTFT &lt;200ms
       </span>
-      <span className="text-emerald-400 font-mono font-medium">
-        P50 TTFT: {latency}ms
-      </span>
-      <span className="text-gray-500">· live</span>
+      <span className="text-gray-500">· Q4 2026</span>
     </motion.div>
   );
 }
@@ -81,7 +69,7 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
         >
-          <LiveLatencyBadge />
+          <BetaTargetBadge />
         </motion.div>
 
         <motion.div
@@ -98,10 +86,12 @@ export default function Hero() {
             <ArrowRight className="h-4 w-4" />
           </a>
           <a
-            href="#benchmark"
+            href="https://api.agentflowengine.com/health"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-900/50 px-6 py-3 text-sm font-semibold text-gray-300 hover:border-gray-600 transition-colors"
           >
-            Live Benchmarks
+            API Health Check
           </a>
         </motion.div>
       </div>
