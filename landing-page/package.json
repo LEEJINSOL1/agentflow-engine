@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve@latest out -l tcp://0.0.0.0:${PORT:-3000}",
+    "start": "serve out -s -l ${PORT:-3000}",
     "lint": "eslint"
   },
   "dependencies": {
@@ -13,7 +13,8 @@
     "lucide-react": "^1.34.0",
     "next": "16.3.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@railway/cli": "^5.45.5",
