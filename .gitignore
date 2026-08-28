@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.next/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets — never commit
+node_identity.json
+.env
+.env.*
+*.pem
+*.key
+
+# Internal docs (not for public repo)
+docs/
+application-docs/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Railway
+.railway/
+
+# Build
+dist/
+build/
+*.log
