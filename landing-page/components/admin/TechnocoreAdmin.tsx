@@ -251,7 +251,7 @@ export default function TechnocoreAdmin() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Keepalive 실패");
+      if (!res.ok) throw new Error(data.error ?? "Heartbeat 실패");
     }, "heartbeat note를 갱신했습니다. lobby 메시지는 아래 입력창에서 직접 보내세요.");
   }
 
@@ -379,7 +379,7 @@ export default function TechnocoreAdmin() {
               technocore.chat에 직접 연결하세요.
             </div>
             <div className="mb-3 rounded-lg border border-gray-700 bg-[#030712] px-3 py-2 text-xs text-gray-400">
-              Note/heartbeat는 <strong>7일</strong> 미활동 시 삭제됩니다. 5~6일마다 Keepalive.
+              Note/heartbeat는 <strong>7일</strong> 미활동 시 삭제됩니다. 5~6일마다 생존신고.
               Lobby는 16자 이상·직접 작성 (중복 문장 422).
             </div>
             {identities.length === 0 ? (
@@ -443,7 +443,7 @@ export default function TechnocoreAdmin() {
               </button>
             </div>
             {!identityLocked && identities.length > 0 && (
-              <p className="mt-2 text-xs text-gray-500">등록/keepalive 전에 활성 DID를 고정하세요.</p>
+              <p className="mt-2 text-xs text-gray-500">등록/생존신고 전에 활성 DID를 고정하세요.</p>
             )}
           </section>
 

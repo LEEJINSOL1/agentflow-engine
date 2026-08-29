@@ -26,7 +26,7 @@ menu() {
   echo ""
   echo "=== Flop VM — Technocore (technocore.chat) ==="
   echo "identity: $ID"
-  run_python status "$ID" 2>/dev/null || true
+  run_python status -i "$ID" 2>/dev/null || true
   echo ""
   echo "  1) DID 등록 (최초 1회)"
   echo "  2) 생존신고 (heartbeat)"
@@ -38,10 +38,10 @@ menu() {
   read -r -p "선택: " choice
   case "$choice" in
     1)
-      run_python register "$ID" --label "$LABEL"
+      run_python register -i "$ID" --label "$LABEL"
       ;;
     2)
-      run_python heartbeat "$ID"
+      run_python heartbeat -i "$ID"
       ;;
     3)
       read -r -p "메시지 (16자 이상, 직접 작성): " msg
@@ -49,13 +49,13 @@ menu() {
         echo "16자 이상 입력하세요 (dupe/spam 방지)."
         return
       fi
-      run_python say "$ID" lobby "$msg"
+      run_python say -i "$ID" "$msg"
       ;;
     4)
-      run_python read "$ID" lobby
+      run_python read -i "$ID"
       ;;
     5)
-      run_python status "$ID"
+      run_python status -i "$ID"
       ;;
     q|Q)
       exit 0

@@ -8,9 +8,10 @@ Uses the official conventions from https://github.com/flop-labs/technocore-chat
 
 Install: pip install cryptography
 Usage:
-  python3 vm_technocore.py register ~/.flop/node_identity.json
-  python3 vm_technocore.py heartbeat ~/.flop/node_identity.json
-  python3 vm_technocore.py say ~/.flop/node_identity.json lobby "your message here"
+  python3 vm_technocore.py register
+  python3 vm_technocore.py heartbeat
+  python3 vm_technocore.py say "your message here"
+  python3 vm_technocore.py say -r lobby "your message here"
 """
 
 from __future__ import annotations
@@ -192,43 +193,67 @@ def cmd_say(key: Ed25519PrivateKey, did: str, room: str, text: str) -> None:
 DEFAULT_ID = Path.home() / ".flop" / "node_identity.json"
 
 
+def add_identity_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "-i",
+        "--identity",
+        type=Path,
+        default=DEFAULT_ID,
+        help=f"identity JSON (default: {DEFAULT_ID})",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_reg = sub.add_parser("register", help="publish DID identity note (once)")
-    p_reg.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    add_identity_arg(p_reg)
     p_reg.add_argument("--label", default="azure vm pilot agent")
 
     p_hb = sub.add_parser("heartbeat", help="update presence heartbeat note")
-    p_hb.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    add_identity_arg(p_hb)
 
-    p_say = sub.add_parser("say", help="signed lobby/room message")
-    p_say.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
-    p_say.add_argument("room", nargs="?", default="lobby")
-    p_say.add_argument("text", nargs="?", default="")
+    p_say = sub.add_parser(
+        "say",
+        help='signed room message — e.g. say "your message here"',
+    )
+    add_identity_arg(p_say)
+    p_say.add_argument("-r", "--room", default="lobby")
+    p_say.add_argument(
+        "message",
+        nargs="*",
+        help="message text (quote if it contains spaces)",
+    )
 
     p_read = sub.add_parser("read", help="read recent room messages")
-    p_read.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
-    p_read.add_argument("room", nargs="?", default="lobby")
+    add_identity_arg(p_read)
+    p_read.add_argument("-r", "--room", default="lobby")
     p_read.add_argument("--limit", type=int, default=15)
 
     p_st = sub.add_parser("status", help="health + identity/heartbeat check")
-    p_st.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    add_identity_arg(p_st)
 
     p_int = sub.add_parser("interactive", help="prompt for lobby message")
-    p_int.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
-    p_int.add_argument("--room", default="lobby")
+    add_identity_arg(p_int)
+    p_int.add_argument("-r", "--room", default="lobby")
 
     args = parser.parse_args()
+    identity_path = args.identity.expanduser()
 
-    if args.cmd == "say" and not args.text:
-        try:
-            args.text = input("메시지 (16자 이상): ").strip()
-        except EOFError:
-            raise SystemExit("text required") from None
-        if len(args.text) < 16:
+    if args.cmd == "say":
+        text = " ".join(args.message).strip()
+        if not text:
+            try:
+                text = input("메시지 (16자 이상): ").strip()
+            except EOFError:
+                raise SystemExit("text required") from None
+        if len(text) < 16:
             raise SystemExit("16자 이상 입력하세요")
+        key, did = load_identity(identity_path)
+        print(f"DID: {did}")
+        cmd_say(key, did, args.room, text)
+        return
 
     if args.cmd == "interactive":
         try:
@@ -237,20 +262,18 @@ def main() -> None:
             raise SystemExit("cancelled") from None
         if len(msg) < 16:
             raise SystemExit("16자 이상 입력하세요")
-        key, did = load_identity(args.identity.expanduser())
+        key, did = load_identity(identity_path)
         print(f"DID: {did}")
         cmd_say(key, did, args.room, msg)
         return
 
-    key, did = load_identity(args.identity.expanduser())
+    key, did = load_identity(identity_path)
     print(f"DID: {did}")
 
     if args.cmd == "register":
         cmd_register(key, did, args.label)
     elif args.cmd == "heartbeat":
         cmd_heartbeat(key, did)
-    elif args.cmd == "say":
-        cmd_say(key, did, args.room, args.text)
     elif args.cmd == "read":
         cmd_read(args.room, args.limit)
     elif args.cmd == "status":
