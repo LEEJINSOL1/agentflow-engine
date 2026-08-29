@@ -7,7 +7,11 @@ RUN npm run build
 
 FROM node:20-alpine
 WORKDIR /app
-RUN npm install -g serve@14.2.6
-COPY --from=builder /app/out ./out
+ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-CMD sh -c "serve out -s -l ${PORT:-8080}"
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+CMD sh -c "next start -p ${PORT:-8080}"
