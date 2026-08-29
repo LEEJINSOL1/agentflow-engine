@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     withCheckin?: boolean;
   };
 
-  const { identityId, room = "lobby", withCheckin = true } = body;
+  const { identityId, room = "lobby", withCheckin = false } = body;
   if (!identityId) {
     return NextResponse.json({ error: "identityId is required" }, { status: 400 });
   }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       const stamp = new Date().toISOString();
       checkin = await saySigned(
         room,
-        `AgentFlow keepalive ${stamp}`,
+        `Primary node check-in ${stamp}`,
         identity.privateKeyHex,
       );
     }

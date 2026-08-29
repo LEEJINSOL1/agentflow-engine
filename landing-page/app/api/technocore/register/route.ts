@@ -30,9 +30,10 @@ export async function POST(request: Request) {
     let intro: Awaited<ReturnType<typeof saySigned>> | null = null;
 
     if (withIntro) {
+      const stamp = new Date().toISOString();
       intro = await saySigned(
         room,
-        `AgentFlow node online. DID registered for FLOP testnet prep.`,
+        `Primary node registered for FLOP testnet prep ${stamp}`,
         identity.privateKeyHex,
       );
     }

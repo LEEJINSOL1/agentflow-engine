@@ -233,9 +233,25 @@ export async function saySigned(
   return { ok: true, body, record };
 }
 
-export async function publishIdentityNote(did: string): Promise<{ path: string; body: string }> {
+export async function readNote(ns: string, key: string): Promise<string | null> {
+  const res = await technocoreFetch(`/kv/${encodeURIComponent(ns)}/${encodeURIComponent(key)}`);
+  const body = await res.text();
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Note read failed (${res.status}): ${body.slice(0, 200)}`);
+  }
+  return body;
+}
+
+export async function publishIdentityNote(
+  did: string,
+  profileLine?: string,
+): Promise<{ path: string; body: string }> {
   const { shard, key } = didShardPath(did);
-  const value = sweepText(`${did} agent registered via AgentFlow admin`, 8192);
+  const value = sweepText(
+    profileLine ?? `${did} agent registered via AgentFlow admin (primary)`,
+    8192,
+  );
   const path = `/kv/did-${shard}/${key}/set/${encodeURIComponent(value)}?if_absent=1`;
   const res = await technocoreFetch(path, { method: "GET" });
   const body = await res.text();
@@ -245,17 +261,19 @@ export async function publishIdentityNote(did: string): Promise<{ path: string; 
   return { path: `/kv/did-${shard}/${key}`, body };
 }
 
+/** Official presence convention: /kv/did-{shard}/hb-{fingerprint}/set/ (llms.txt) */
 export async function keepaliveNote(did: string): Promise<{ path: string; body: string }> {
-  const { shard, key, fingerprint } = didShardPath(did);
+  const { shard, fingerprint } = didShardPath(did);
   const stamp = new Date().toISOString();
   const value = sweepText(`heartbeat ${stamp}`, 8192);
-  const path = `/kv/did-${shard}/${key}/hb-${fingerprint}/set/${encodeURIComponent(value)}`;
+  const hbKey = `hb-${fingerprint}`;
+  const path = `/kv/did-${shard}/${hbKey}/set/${encodeURIComponent(value)}`;
   const res = await technocoreFetch(path, { method: "GET" });
   const body = await res.text();
   if (!res.ok) {
     throw new Error(`Keepalive failed (${res.status}): ${body.slice(0, 300)}`);
   }
-  return { path: `/kv/did-${shard}/${key}/hb-${fingerprint}`, body };
+  return { path: `/kv/did-${shard}/${hbKey}`, body };
 }
 
 export async function checkHealth(): Promise<boolean> {

@@ -252,7 +252,7 @@ export default function TechnocoreAdmin() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Keepalive 실패");
-    }, "생존신고(keepalive + 체크인)를 완료했습니다.");
+    }, "heartbeat note를 갱신했습니다. lobby 메시지는 아래 입력창에서 직접 보내세요.");
   }
 
   async function runRegister() {
@@ -374,8 +374,13 @@ export default function TechnocoreAdmin() {
               활성 DID (1개만 사용)
             </h2>
             <div className="mb-3 rounded-lg border border-amber-800/50 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-              ⚠️ 같은 IP에서 여러 DID로 동시에 체크인하면 sybil로 분류될 수 있습니다.
-              <strong className="block mt-1">하나의 키만 선택하고 고정하세요.</strong>
+              ⚠️ 이 adminpage는 <strong>Primary DID 1개</strong> 전용입니다 (Railway IP).
+              VM02~04는 Azure VM에서 <code className="text-amber-100">vm_technocore.py</code>로
+              technocore.chat에 직접 연결하세요.
+            </div>
+            <div className="mb-3 rounded-lg border border-gray-700 bg-[#030712] px-3 py-2 text-xs text-gray-400">
+              Note/heartbeat는 <strong>7일</strong> 미활동 시 삭제됩니다. 5~6일마다 Keepalive.
+              Lobby는 16자 이상·직접 작성 (중복 문장 422).
             </div>
             {identities.length === 0 ? (
               <p className="text-sm text-amber-300">
@@ -434,7 +439,7 @@ export default function TechnocoreAdmin() {
                 disabled={!selectedIdentityId || !identityLocked || busy !== null}
                 className="rounded-lg bg-emerald-700 px-3 py-2 text-sm text-white hover:bg-emerald-600 disabled:opacity-50"
               >
-                {busy === "keepalive" ? "전송 중…" : "생존신고 (Keepalive)"}
+                {busy === "keepalive" ? "전송 중…" : "생존신고 (heartbeat note)"}
               </button>
             </div>
             {!identityLocked && identities.length > 0 && (
