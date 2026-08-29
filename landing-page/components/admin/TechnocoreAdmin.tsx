@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   KeyRound,
@@ -20,6 +20,7 @@ type Message = { seq: number; from: string; text: string; ts?: string; signed?: 
 
 const PRESET_ROOMS = ["lobby", "technocore", "flop-network", "meta"];
 const ACTIVE_IDENTITY_KEY = "agentflow_active_did";
+const MESSAGE_LIMIT = 30;
 
 function loadStoredIdentityId(): string {
   if (typeof window === "undefined") return "";
@@ -50,7 +51,11 @@ export default function TechnocoreAdmin() {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const visibleMessages = useMemo(
+    () => messages.slice(-MESSAGE_LIMIT),
+    [messages],
+  );
 
   const activeRoom = useMemo(() => {
     if (customRoom.trim()) return customRoom.trim().toLowerCase();
@@ -115,10 +120,15 @@ export default function TechnocoreAdmin() {
 
   const loadMessages = useCallback(
     async (reset = false) => {
-      const since = reset ? 0 : sinceSeq;
-      const res = await fetch(
-        `/api/technocore/messages?room=${encodeURIComponent(activeRoom)}&since=${since}&limit=80`,
-      );
+      const params = new URLSearchParams({
+        room: activeRoom,
+        limit: String(MESSAGE_LIMIT),
+      });
+      if (!reset && sinceSeq > 0) {
+        params.set("since", String(sinceSeq));
+      }
+
+      const res = await fetch(`/api/technocore/messages?${params}`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setStatus(err.error ?? "메시지를 불러오지 못했습니다.");
@@ -126,13 +136,14 @@ export default function TechnocoreAdmin() {
       }
       const data = await res.json();
       setMessages((prev) => {
-        if (reset) return data.messages ?? [];
+        const incoming = data.messages ?? [];
+        if (reset) return incoming.slice(-MESSAGE_LIMIT);
         const merged = [...prev];
-        for (const msg of data.messages ?? []) {
+        for (const msg of incoming) {
           if (!merged.some((m) => m.seq === msg.seq)) merged.push(msg);
         }
         merged.sort((a, b) => a.seq - b.seq);
-        return merged.slice(-200);
+        return merged.slice(-MESSAGE_LIMIT);
       });
       if (typeof data.latestSeq === "number" && data.latestSeq > sinceSeq) {
         setSinceSeq(data.latestSeq);
@@ -164,10 +175,6 @@ export default function TechnocoreAdmin() {
     const timer = setInterval(() => loadMessages(false), 5000);
     return () => clearInterval(timer);
   }, [authenticated, autoRefresh, loadMessages]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -486,7 +493,9 @@ export default function TechnocoreAdmin() {
           <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
             <div>
               <h2 className="font-medium text-white">#{activeRoom}</h2>
-              <p className="text-xs text-gray-500">{messages.length} messages loaded</p>
+              <p className="text-xs text-gray-500">
+                최근 {visibleMessages.length}개 표시 (최대 {MESSAGE_LIMIT}개)
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -508,12 +517,12 @@ export default function TechnocoreAdmin() {
           </div>
 
           <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
-            {messages.length === 0 ? (
+            {visibleMessages.length === 0 ? (
               <p className="py-8 text-center text-sm text-gray-500">
                 메시지가 없거나 Technocore에 연결할 수 없습니다.
               </p>
             ) : (
-              messages.map((msg) => (
+              visibleMessages.map((msg) => (
                 <div
                   key={msg.seq}
                   className={`rounded-lg border px-3 py-2 ${
@@ -536,7 +545,6 @@ export default function TechnocoreAdmin() {
                 </div>
               ))
             )}
-            <div ref={bottomRef} />
           </div>
 
           <div className="border-t border-gray-800 p-4">

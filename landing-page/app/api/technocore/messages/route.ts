@@ -10,8 +10,9 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const room = searchParams.get("room") ?? "lobby";
-  const since = Number(searchParams.get("since") ?? "0");
-  const limit = Number(searchParams.get("limit") ?? "50");
+  const sinceParam = searchParams.get("since");
+  const since = sinceParam != null ? Number(sinceParam) : undefined;
+  const limit = Math.min(Number(searchParams.get("limit") ?? "30"), 30);
 
   if (!/^[a-z0-9][a-z0-9_-]{0,47}$/.test(room)) {
     return NextResponse.json({ error: "Invalid room name" }, { status: 400 });

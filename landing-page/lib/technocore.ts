@@ -118,14 +118,16 @@ async function technocoreFetch(path: string, init?: RequestInit): Promise<Respon
 
 export async function readRoom(
   room: string,
-  since = 0,
-  limit = 50,
+  since?: number,
+  limit = 30,
 ): Promise<{ messages: TechnocoreMessage[]; latestSeq: number; raw?: string }> {
   const params = new URLSearchParams({
-    since: String(since),
     limit: String(Math.min(Math.max(limit, 1), 200)),
     format: "json",
   });
+  if (since != null && since > 0) {
+    params.set("since", String(since));
+  }
   const res = await technocoreFetch(`/r/${encodeURIComponent(room)}?${params}`);
   const body = await res.text();
 
@@ -153,11 +155,11 @@ export async function readRoom(
       ),
     }));
     const latestSeq =
-      parsed.last_seq ?? parsed.latest_seq ?? messages.at(-1)?.seq ?? since;
+      parsed.last_seq ?? parsed.latest_seq ?? messages.at(-1)?.seq ?? since ?? 0;
     return { messages, latestSeq };
   } catch {
     const messages = parseTextRoom(body);
-    const latestSeq = messages.at(-1)?.seq ?? since;
+    const latestSeq = messages.at(-1)?.seq ?? since ?? 0;
     return { messages, latestSeq, raw: body };
   }
 }
