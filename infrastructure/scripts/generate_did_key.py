@@ -7,7 +7,12 @@ from pathlib import Path
 
 try:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+        PublicFormat,
+    )
 except ImportError:
     print("Install: pip install cryptography", file=sys.stderr)
     sys.exit(1)
@@ -45,7 +50,7 @@ def generate_identity(output_path: Path) -> dict:
         "did": did,
         "public_key_hex": public_bytes.hex(),
         "private_key_hex": private_key.private_bytes(
-            Encoding.Raw, PublicFormat.Raw, None
+            Encoding.Raw, PrivateFormat.Raw, NoEncryption()
         ).hex(),
     }
 

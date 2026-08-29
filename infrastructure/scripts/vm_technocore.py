@@ -122,6 +122,48 @@ def cmd_heartbeat(key: Ed25519PrivateKey, did: str) -> None:
         sys.exit(1)
 
 
+def cmd_read(room: str, limit: int = 15) -> None:
+    path = f"/r/{urllib.parse.quote(room, safe='')}?limit={limit}&format=json"
+    status, body = fetch(path)
+    if status != 200:
+        print(f"read failed [{status}]: {body[:300]}")
+        sys.exit(1)
+    try:
+        data = json.loads(body)
+        messages = data.get("messages") or []
+    except json.JSONDecodeError:
+        print(body[:2000])
+        return
+    if not messages:
+        print("(no messages)")
+        return
+    for m in messages[-limit:]:
+        seq = m.get("seq", "?")
+        author = m.get("from", "?")
+        text = m.get("text", "")
+        print(f"[{seq}] {author}: {text}")
+
+
+def cmd_status(did: str) -> None:
+    status, body = fetch("/healthz")
+    online = status == 200
+    print(f"technocore.chat: {'online' if online else f'offline ({status})'}")
+    fp = fingerprint(did)
+    shard, note_key = fp[:2], fp[2:]
+    ns = f"did-{shard}"
+    st, note = fetch(f"/kv/{ns}/{note_key}")
+    if st == 200 and note.strip():
+        print(f"identity note: OK (/kv/{ns}/{note_key})")
+    else:
+        print("identity note: (not set — run register)")
+    hb_key = f"hb-{fp}"
+    st2, hb = fetch(f"/kv/{ns}/{hb_key}")
+    if st2 == 200 and hb.strip():
+        print(f"last heartbeat: {hb.strip()[:120]}")
+    else:
+        print("heartbeat: (none yet — run heartbeat)")
+
+
 def cmd_say(key: Ed25519PrivateKey, did: str, room: str, text: str) -> None:
     nonce = str(int(time.time() * 1000))
     if not re.fullmatch(r"[0-9]{1,19}", nonce):
@@ -147,23 +189,59 @@ def cmd_say(key: Ed25519PrivateKey, did: str, room: str, text: str) -> None:
         sys.exit(1)
 
 
+DEFAULT_ID = Path.home() / ".flop" / "node_identity.json"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_reg = sub.add_parser("register", help="publish DID identity note (once)")
-    p_reg.add_argument("identity", type=Path)
+    p_reg.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
     p_reg.add_argument("--label", default="azure vm pilot agent")
 
     p_hb = sub.add_parser("heartbeat", help="update presence heartbeat note")
-    p_hb.add_argument("identity", type=Path)
+    p_hb.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
 
     p_say = sub.add_parser("say", help="signed lobby/room message")
-    p_say.add_argument("identity", type=Path)
-    p_say.add_argument("room")
-    p_say.add_argument("text")
+    p_say.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    p_say.add_argument("room", nargs="?", default="lobby")
+    p_say.add_argument("text", nargs="?", default="")
+
+    p_read = sub.add_parser("read", help="read recent room messages")
+    p_read.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    p_read.add_argument("room", nargs="?", default="lobby")
+    p_read.add_argument("--limit", type=int, default=15)
+
+    p_st = sub.add_parser("status", help="health + identity/heartbeat check")
+    p_st.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+
+    p_int = sub.add_parser("interactive", help="prompt for lobby message")
+    p_int.add_argument("identity", type=Path, nargs="?", default=DEFAULT_ID)
+    p_int.add_argument("--room", default="lobby")
 
     args = parser.parse_args()
+
+    if args.cmd == "say" and not args.text:
+        try:
+            args.text = input("메시지 (16자 이상): ").strip()
+        except EOFError:
+            raise SystemExit("text required") from None
+        if len(args.text) < 16:
+            raise SystemExit("16자 이상 입력하세요")
+
+    if args.cmd == "interactive":
+        try:
+            msg = input("lobby 메시지 (16자 이상, 직접 작성): ").strip()
+        except EOFError:
+            raise SystemExit("cancelled") from None
+        if len(msg) < 16:
+            raise SystemExit("16자 이상 입력하세요")
+        key, did = load_identity(args.identity.expanduser())
+        print(f"DID: {did}")
+        cmd_say(key, did, args.room, msg)
+        return
+
     key, did = load_identity(args.identity.expanduser())
     print(f"DID: {did}")
 
@@ -173,6 +251,10 @@ def main() -> None:
         cmd_heartbeat(key, did)
     elif args.cmd == "say":
         cmd_say(key, did, args.room, args.text)
+    elif args.cmd == "read":
+        cmd_read(args.room, args.limit)
+    elif args.cmd == "status":
+        cmd_status(did)
 
 
 if __name__ == "__main__":
