@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 
 export type NodeIdentity = {
@@ -13,6 +13,11 @@ type IdentityFile = {
   private_key_hex: string;
 };
 
+export function abbreviateDid(did: string): string {
+  if (!did.startsWith("did:key:z6Mk") || did.length < 16) return "did:key:…";
+  return `did:key:z6Mk…${did.slice(-4)}`;
+}
+
 function parseIdentityFile(filePath: string, id: string, label: string): NodeIdentity | null {
   if (!existsSync(filePath)) return null;
   const raw = JSON.parse(readFileSync(filePath, "utf8")) as IdentityFile;
@@ -25,6 +30,23 @@ function parseIdentityFile(filePath: string, id: string, label: string): NodeIde
   };
 }
 
+function activeIdentityFilter(): string | null {
+  return process.env.TECHNOCORE_ACTIVE_IDENTITY?.trim() || null;
+}
+
+function applyActiveFilter(identities: NodeIdentity[]): NodeIdentity[] {
+  const activeId = activeIdentityFilter();
+  if (!activeId) {
+    // Production default: use only the first identity to avoid multi-DID from one IP.
+    if (process.env.NODE_ENV === "production" && identities.length > 1) {
+      return [identities[0]];
+    }
+    return identities;
+  }
+  const match = identities.find((item) => item.id === activeId);
+  return match ? [match] : identities.slice(0, 1);
+}
+
 export function loadIdentities(): NodeIdentity[] {
   const envJson = process.env.TECHNOCORE_IDENTITIES;
   if (envJson) {
@@ -35,26 +57,24 @@ export function loadIdentities(): NodeIdentity[] {
       private_key_hex?: string;
       privateKeyHex?: string;
     }>;
-    return parsed.map((item) => ({
+    const identities = parsed.map((item) => ({
       id: item.id,
       label: item.label ?? item.id,
       did: item.did,
       privateKeyHex: item.privateKeyHex ?? item.private_key_hex ?? "",
     }));
+    return applyActiveFilter(identities);
   }
 
   const identityDir = process.env.TECHNOCORE_IDENTITY_DIR;
   if (identityDir) {
-    const candidates: Array<[string, string, string]> = [
-      ["node_identity.json", "primary", "Primary Node"],
-      ["node_identity_02.json", "secondary", "Secondary Node"],
-    ];
     const identities: NodeIdentity[] = [];
-    for (const [file, id, label] of candidates) {
-      const identity = parseIdentityFile(join(identityDir, file), id, label);
+    for (const file of readdirSync(identityDir).filter((f) => f.endsWith(".json")).sort()) {
+      const id = file.replace(/\.json$/, "");
+      const identity = parseIdentityFile(join(identityDir, file), id, id);
       if (identity) identities.push(identity);
     }
-    if (identities.length) return identities;
+    if (identities.length) return applyActiveFilter(identities);
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -64,7 +84,6 @@ export function loadIdentities(): NodeIdentity[] {
   const repoRoot = join(process.cwd(), "..");
   const candidates: Array<[string, string, string]> = [
     ["node_identity.json", "primary", "Primary Node"],
-    ["node_identity_02.json", "secondary", "Secondary Node"],
   ];
 
   const identities: NodeIdentity[] = [];
@@ -76,13 +95,21 @@ export function loadIdentities(): NodeIdentity[] {
     );
     if (identity) identities.push(identity);
   }
-  return identities;
+  return applyActiveFilter(identities);
 }
 
 export function getIdentityById(id: string): NodeIdentity | undefined {
   return loadIdentities().find((item) => item.id === id);
 }
 
-export function listIdentitySummaries(): Array<{ id: string; label: string; did: string }> {
-  return loadIdentities().map(({ id, label, did }) => ({ id, label, did }));
+export function listIdentitySummaries(): Array<{
+  id: string;
+  label: string;
+  didHint: string;
+}> {
+  return loadIdentities().map(({ id, label, did }) => ({
+    id,
+    label,
+    didHint: abbreviateDid(did),
+  }));
 }

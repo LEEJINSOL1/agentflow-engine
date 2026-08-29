@@ -34,7 +34,10 @@ export async function POST(request: Request) {
       ok: true,
       room,
       response: result.body,
-      record: result.record,
+      record: {
+        nonce: result.record.nonce,
+        seqHint: "signed",
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

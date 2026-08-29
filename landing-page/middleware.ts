@@ -9,11 +9,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isAdminPage = pathname.startsWith("/adminpage");
   const isProtectedApi =
     pathname.startsWith("/api/technocore") || pathname.startsWith("/api/admin/me");
 
-  if (!isAdminPage && !isProtectedApi) {
+  if (!isProtectedApi) {
     return NextResponse.next();
   }
 
@@ -21,18 +20,12 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifySessionTokenEdge(token) : null;
 
   if (!session) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/adminpage";
-    loginUrl.searchParams.set("login", "1");
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/adminpage/:path*", "/api/technocore/:path*", "/api/admin/me"],
+  matcher: ["/api/technocore/:path*", "/api/admin/me"],
 };

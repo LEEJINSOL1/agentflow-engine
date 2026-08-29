@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 
-type Identity = { id: string; label: string; did: string };
+type Identity = { id: string; label: string; didHint: string };
 type Room = { name: string; lastSeq?: number; topic?: string };
 type Message = { seq: number; from: string; text: string; ts?: string; signed?: boolean };
 
@@ -376,18 +376,24 @@ export default function TechnocoreAdmin() {
               </p>
             ) : (
               <>
-                <select
-                  value={selectedIdentityId}
-                  onChange={(e) => handleIdentityChange(e.target.value)}
-                  disabled={busy !== null}
-                  className="mb-2 w-full rounded-lg border border-gray-700 bg-[#030712] px-2 py-2 text-sm text-white disabled:opacity-60"
-                >
-                  {identities.map((id) => (
-                    <option key={id.id} value={id.id}>
-                      {id.label}
-                    </option>
-                  ))}
-                </select>
+                {identities.length > 1 ? (
+                  <select
+                    value={selectedIdentityId}
+                    onChange={(e) => handleIdentityChange(e.target.value)}
+                    disabled={busy !== null || identityLocked}
+                    className="mb-2 w-full rounded-lg border border-gray-700 bg-[#030712] px-2 py-2 text-sm text-white disabled:opacity-60"
+                  >
+                    {identities.map((id) => (
+                      <option key={id.id} value={id.id}>
+                        {id.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="mb-2 rounded-lg border border-gray-700 bg-[#030712] px-2 py-2 text-sm text-gray-300">
+                    {identities[0]?.label ?? "Primary Node"}
+                  </p>
+                )}
                 {!identityLocked && (
                   <button
                     onClick={confirmActiveIdentity}
@@ -403,8 +409,9 @@ export default function TechnocoreAdmin() {
               </>
             )}
             {selectedIdentity && (
-              <p className="break-all font-mono text-[10px] leading-relaxed text-gray-500">
-                {selectedIdentity.did}
+              <p className="font-mono text-[10px] leading-relaxed text-gray-500">
+                {selectedIdentity.didHint}
+                <span className="ml-1 text-gray-600">(전체 DID는 서버에만 보관)</span>
               </p>
             )}
             <div className="mt-3 grid gap-2">
@@ -510,7 +517,7 @@ export default function TechnocoreAdmin() {
                 <div
                   key={msg.seq}
                   className={`rounded-lg border px-3 py-2 ${
-                    selectedIdentity && msg.from.includes(selectedIdentity.did.slice(-8))
+                    selectedIdentity && msg.from.includes(selectedIdentity.didHint.slice(-4))
                       ? "border-blue-800/60 bg-blue-950/20"
                       : "border-gray-800 bg-[#030712]/50"
                   }`}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getIdentityById } from "@/lib/identities";
+import { getIdentityById, abbreviateDid } from "@/lib/identities";
 import { keepaliveNote, publishIdentityNote, saySigned } from "@/lib/technocore";
 
 export async function POST(request: Request) {
@@ -40,10 +40,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      did: identity.did,
+      didHint: abbreviateDid(identity.did),
       keepalive,
       checkin: checkin
-        ? { room, response: checkin.body, record: checkin.record }
+        ? { room, response: checkin.body, nonce: checkin.record.nonce }
         : null,
     });
   } catch (error) {

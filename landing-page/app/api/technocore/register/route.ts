@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getIdentityById } from "@/lib/identities";
+import { getIdentityById, abbreviateDid } from "@/lib/identities";
 import { publishIdentityNote, saySigned } from "@/lib/technocore";
 
 export async function POST(request: Request) {
@@ -39,9 +39,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      did: identity.did,
+      didHint: abbreviateDid(identity.did),
       registration,
-      intro: intro ? { room, response: intro.body, record: intro.record } : null,
+      intro: intro ? { room, response: intro.body, nonce: intro.record.nonce } : null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
